@@ -10,7 +10,7 @@ package com.packet;
  * @author Kirs67
  */
 public class DataPacket {
-    final static int size = 30;
+    final static int size = 27;
     final static int beacon = 0xFFFF;
     int number;
     int time, time_part;
@@ -18,14 +18,15 @@ public class DataPacket {
 		pressure,
 		humidity,
 		O2, CO2,
-		rezistance12, rezistance23, rezistance13;
-    int legs, parachute;
+		lum,
+		term;
+    int seeds;
     int cntrl;
     int truecntrl;
     @Override
     public String toString() {
         String str = new String();
-        str+= "Data packet number";
+        str+= "Data packet number ";
         str+= Integer.toString(number);
         return str;
     }

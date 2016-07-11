@@ -5,13 +5,12 @@
  */
 package com.packet;
 
-
-import javax.swing.JOptionPane;
-import jssc.SerialPort;
-import jssc.SerialPortEvent;
-import jssc.SerialPortEventListener;
-import jssc.SerialPortException;
-
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 
 /**
  *
@@ -24,12 +23,16 @@ public class NewJFrame extends javax.swing.JFrame {
      */
     public static String port = null;
     
-    DisplayPacket display = new DisplayPacket();
-    PacketParser parser = new PacketParser(display);
+    static DisplayPacket display = new DisplayPacket();
+    static PacketParser parser = new PacketParser(new MakeCSV());
     
-    private static SerialPort serialPort;
+    
+    JFileChooser chooser = new JFileChooser();
+    boolean file_opened = false;
+    static InputStream file;
+    String filename;
+    byte[] buffer = new byte[1000000];
 
-    
     public NewJFrame() {
         initComponents();
     }
@@ -45,9 +48,7 @@ public class NewJFrame extends javax.swing.JFrame {
 
         jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
-        jTextField1 = new javax.swing.JTextField();
         jButton2 = new javax.swing.JButton();
-        jLabel3 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
@@ -81,21 +82,12 @@ public class NewJFrame extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("COM & Packet");
 
-        jTextField1.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
-            }
-        });
-
         jButton2.setText("Open");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton2ActionPerformed(evt);
             }
         });
-
-        jLabel3.setText("Port:");
 
         jLabel1.setText("Number:");
 
@@ -127,13 +119,10 @@ public class NewJFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel10))
+                        .addComponent(jLabel10)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jLabel2)
@@ -173,10 +162,7 @@ public class NewJFrame extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addContainerGap()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton2)
-                            .addComponent(jLabel3)))
+                        .addComponent(jButton2))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(29, 29, 29)
                         .addComponent(jLabel10)))
@@ -234,53 +220,52 @@ public class NewJFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        if(serialPort.isOpened() == false) {
-            port = jTextField1.getText();
-            jTextField1.setEditable(false);
-            try {
-                serialPort = new SerialPort(jTextField1.getText());
-                serialPort.openPort();
-                serialPort.setParams(SerialPort.BAUDRATE_9600,
-                                     SerialPort.DATABITS_8,
-                                     SerialPort.STOPBITS_1,
-                                     SerialPort.PARITY_NONE);
-                serialPort.addEventListener(new PortReader(), SerialPort.MASK_RXCHAR);
-                jButton2.setText("Close");
-                /*try(FileOutputStream fos=new FileOutputStream("C://SomeDir//notes.txt")) {
-                    fos.write(0xff);
-                    File file = new File();
-                    file.
+        if(file_opened == false) {
+            int retval = chooser.showOpenDialog(null);
+            if(retval == JFileChooser.APPROVE_OPTION) {
+                try {
+                    file = new FileInputStream(chooser.getSelectedFile());
+                    jButton2.setText("Close");
+                    file_opened = true;
+                    readFile();
+                } catch (IOException ex) {
+                    Logger.getLogger(NewJFrame.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                catch(IOException ex){
-                    System.out.println(ex.getMessage());
-                } */
+            }
 
-            }
-            catch (SerialPortException ex) {
-                JOptionPane.showMessageDialog(rootPane, "Can't open (" + ex + ")");
-                jTextField1.setEditable(true);
-            }
-            
         }
         else {
             try {
-                serialPort.closePort();
-                jTextField1.setEditable(true);
+                file.close();
                 jButton2.setText("Open");
+                file_opened = false;
             }
-            catch (SerialPortException ex) {
-                JOptionPane.showMessageDialog(rootPane, "Can't close (" + ex + ")");
+            catch (IOException ex) {
+                Logger.getLogger(NewJFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
-
     /**
      * @param args the command line arguments
      */
+    
+    public static void readFile() {
+        int bib = 1;
+        try{
+            while(file.available()!=0) {
+                if(bib!=512){
+                    parser.addByte(file.read());
+                    bib++;
+                }
+                else bib = 1;
+            }
+        }
+        catch(IOException ex) {
+            System.err.println(ex);
+        }
+    }
+    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -302,15 +287,13 @@ public class NewJFrame extends javax.swing.JFrame {
         
         //</editor-fold>
         //</editor-fold>
-
-        serialPort = new SerialPort("null");
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
                 new NewJFrame().setVisible(true);
             }
-        
+        ;
         });
     }
     
@@ -358,54 +341,30 @@ public class NewJFrame extends javax.swing.JFrame {
             SetHumidity(packet.humidity);
             SetOxygen(packet.O2);
             SetCO2(packet.CO2);
-            SetParachute(packet.parachute);
-            SetLegs(packet.legs);
-            
         }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
-    private static javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
-    protected javax.swing.JLabel jLabel13;
-    protected javax.swing.JLabel jLabel14;
-    protected javax.swing.JLabel jLabel15;
-    protected javax.swing.JLabel jLabel16;
-    protected javax.swing.JLabel jLabel17;
-    protected javax.swing.JLabel jLabel18;
-    protected javax.swing.JLabel jLabel19;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel16;
+    private javax.swing.JLabel jLabel17;
+    private javax.swing.JLabel jLabel18;
+    private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private static javax.swing.JLabel jLabel9;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
-     private class PortReader implements SerialPortEventListener {
-
-        @Override
-        public void serialEvent(SerialPortEvent event) {
-            if(event.isRXCHAR() && event.getEventValue() > 0){
-                try {
-                    while(serialPort.getInputBufferBytesCount()!=0) {
-                        byte[] bytes = serialPort.readBytes(1);
-                        Integer bigbyte = Byte.toUnsignedInt(bytes[0]);
-                        parser.addByte(bigbyte);
-                    }
-                    display_packet();
-                }
-                catch (SerialPortException ex) {
-                    System.out.println(ex);
-                }
-            }
-        }
-    }
-
+    
 }

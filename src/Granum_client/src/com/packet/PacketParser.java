@@ -58,13 +58,13 @@ public class PacketParser {
             case STATE_IN_ACCUMULATION:
                 _dataContainer.add(byte1);
                 if(_dataContainer.size()== DataPacket.size) {
-                    if(check(_dataContainer)) {
+                    if(true/*check(_dataContainer)*/) {
                         System.out.println("Gone");
                         onDataPacketFound(_dataContainer);
                         _dataContainer.clear();
                     }
                     else {
-                        System.out.println("idiot");
+                        System.out.println("Rejected");
                         _dataContainer = new ArrayList<Integer>(DataPacket.size);
                         _state = State.STATE_IN_SEARCH;
                     }
@@ -80,9 +80,12 @@ public class PacketParser {
         for (int i = 0; i < DataPacket.size-2;i++)
         {
             retval += data.get(i);
+            retval &= 0xFFFF;
+            
         }
         retval &= 0xFFFF;
         int cntrl = (int)(data.get(DataPacket.size-1)<<8) | data.get(DataPacket.size-2);
+        System.out.println("It must be "+ Integer.toHexString(retval));
         return retval == cntrl;
     }
     
@@ -100,12 +103,9 @@ public class PacketParser {
         packet.humidity = (int)(data.get(15)<<8 | data.get(14));
         packet.O2 = (int)(data.get(17)<<8 | data.get(16));
         packet.CO2 = (int)(data.get(19)<<8 | data.get(18));
-        packet.rezistance12 = (int)(data.get(21)<<8 | data.get(20));
-        packet.rezistance23 = (int)(data.get(23)<<8 | data.get(22));
-        packet.rezistance13 = (int)(data.get(25)<<8 | data.get(24));
-        packet.legs = data.get(26);
-        packet.parachute = data.get(27);
-        packet.cntrl = (int)(data.get(29)<<8 | data.get(28));
+        packet.term = (int)(data.get(23)<<8 | data.get(22));
+        packet.seeds = data.get(24);
+        packet.cntrl = (int)(data.get(26)<<8 | data.get(25));
         if (_acceptor != null)
         {
             _acceptor.onDataPacket(packet);
